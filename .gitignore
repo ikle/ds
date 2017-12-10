@@ -3,3 +3,9 @@
 *.a
 *.so
 *.so.*
+*.cmd
+*.mod.c
+*.ko
+modules.order
+Module.symvers
+*.mod
