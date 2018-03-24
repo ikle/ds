@@ -17,6 +17,7 @@
 #include <dahdi/kernel.h>
 
 #include "pds-proto.h"
+#include "pds-req.h"
 
 #define PDS_SPAN_CAPACITY  31
 
@@ -31,6 +32,7 @@ struct pds_span {
 	atomic_t tdm_seq, hdlc_seq, ctl_seq;
 
 	struct mutex ctl_lock;
+	struct pds_req req;
 };
 
 struct pds {

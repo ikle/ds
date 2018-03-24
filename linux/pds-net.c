@@ -82,18 +82,66 @@ struct sk_buff *pds_ctl_start(struct pds_span *o, int code, unsigned len)
 	if (skb == NULL)
 		goto no_skb;
 
+	pds_req_start(&o->req, htons(atomic_read(&o->ctl_seq)), skb);
 	return skb;
 no_skb:
 	mutex_unlock(&o->ctl_lock);
 	return NULL;
 }
 
-static int pds_ctl_done(struct pds_span *o, struct sk_buff *skb)
+static int pds_error_to_errno(enum pds_error e)
 {
-	dev_queue_xmit(skb);
+	switch (e) {
+	case PDS_STATUS_OK:	return 0;
+	case PDS_STATUS_NOSYS:	return ENOSYS;
+	case PDS_STATUS_INVAL:	return EINVAL;
+	case PDS_STATUS_BUSY:	return EBUSY;
+	}
 
-	mutex_unlock(&o->ctl_lock);
+	return EPROTO;
+}
+
+static int pds_ctl_get_status(struct pds_span *o, int *ret)
+{
+	struct sk_buff *reply = pds_req_result(&o->req);
+	struct pds_ctl_header *h;
+	__be16 *p;
+	int found = 0;
+
+	if (reply != NULL) {
+		if (reply->len >= (sizeof (*h) + 2)) {
+			p = (void *) skb_pull(reply, sizeof (*h));
+			*ret = -pds_error_to_errno(ntohs(p[0]));
+			found = 1;
+		}
+
+		dev_kfree_skb(reply);
+	}
+
+	return found;
+}
+
+static int dev_queue_xmit_copy(struct sk_buff *skb)
+{
+	skb = skb_clone(skb, GFP_KERNEL);
+	if (skb == NULL)
+		return -ENOMEM;
+
+	dev_queue_xmit(skb);
 	return 0;
+}
+
+static int pds_ctl_done(struct pds_span *o)
+{
+	int ret = 0;
+
+	dev_queue_xmit_copy(o->req.req);
+	schedule_timeout_uninterruptible(HZ / 20);
+	pds_ctl_get_status(o, &ret);
+
+	pds_req_end(&o->req);
+	mutex_unlock(&o->ctl_lock);
+	return ret;
 }
 
 int pds_ctl_reset(struct pds_span *o)
@@ -105,7 +153,7 @@ int pds_ctl_reset(struct pds_span *o)
 		return -ENOMEM;
 
 	pds_debug("%s: emit reset\n", o->span.name);
-	return pds_ctl_done(o, skb);
+	return pds_ctl_done(o);
 }
 
 int pds_ctl_setup(struct pds_span *o, int sync, enum pds_line_code code,
@@ -128,7 +176,7 @@ int pds_ctl_setup(struct pds_span *o, int sync, enum pds_line_code code,
 
 	pds_debug("%s: emit setup (sync = %d, code = %d, framing = %d, sig = %d)\n",
 		  o->span.name, sync, code, framing, sig);
-	return pds_ctl_done(o, skb);
+	return pds_ctl_done(o);
 }
 
 int pds_ctl_enslave(struct dahdi_chan *o)
@@ -148,7 +196,7 @@ int pds_ctl_enslave(struct dahdi_chan *o)
 	p[1] = htons(o->master->chanpos + 1);
 
 	pds_debug("%s: emit enslave to %s\n", o->name, o->master->name);
-	return pds_ctl_done(s, skb);
+	return pds_ctl_done(s);
 }
 
 int pds_ctl_tdm_open(struct dahdi_chan *o)
@@ -167,7 +215,7 @@ int pds_ctl_tdm_open(struct dahdi_chan *o)
 	p[0] = htons(o->chanpos + 1);
 
 	pds_debug("%s: emit TDM open\n", o->name);
-	return pds_ctl_done(s, skb);
+	return pds_ctl_done(s);
 }
 
 int pds_ctl_hdlc_open(struct dahdi_chan *o)
@@ -186,7 +234,7 @@ int pds_ctl_hdlc_open(struct dahdi_chan *o)
 	p[0] = htons(o->chanpos + 1);
 
 	pds_debug("%s: emit HDLC open\n", o->name);
-	return pds_ctl_done(s, skb);
+	return pds_ctl_done(s);
 }
 
 int pds_ctl_close(struct dahdi_chan *o)
@@ -205,5 +253,5 @@ int pds_ctl_close(struct dahdi_chan *o)
 	p[0] = htons(o->chanpos + 1);
 
 	pds_debug("%s: emit close\n", o->name);
-	return pds_ctl_done(s, skb);
+	return pds_ctl_done(s);
 }

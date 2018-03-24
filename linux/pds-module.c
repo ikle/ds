@@ -237,6 +237,12 @@ static void pds_span_init(struct pds_span *o, struct pds *pds, int index)
 	atomic_set(&o->ctl_seq,  0);
 
 	mutex_init(&o->ctl_lock);
+	pds_req_init(&o->req);
+}
+
+static void pds_span_fini(struct pds_span *o)
+{
+	pds_req_fini(&o->req);
 }
 
 static
@@ -315,12 +321,18 @@ no_register:
 
 static void pds_fini(struct pds *o)
 {
+	size_t i;
+
 	pr_info("pds: unregister %s device\n", dev_name(&o->dev->dev));
 
 	pds_tdm_fini(o);
 	dev_remove_pack(&o->hdlc);
 	dev_put(o->master);
 	dahdi_unregister_device(o->dev);
+
+	for (i = 0; i < ARRAY_SIZE (o->span); ++i)
+		pds_span_fini(o->span + i);
+
 	dahdi_free_device(o->dev);
 }
 
