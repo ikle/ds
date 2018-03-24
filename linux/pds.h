@@ -27,7 +27,7 @@ struct pds_span {
 	/* todo: use span lock to protect it! */
 	DECLARE_BITMAP(tdm_open, PDS_SPAN_CAPACITY);
 
-	__u16 tdm_seq, hdlc_seq, ctl_seq;
+	atomic_t tdm_seq, hdlc_seq, ctl_seq;
 };
 
 struct pds {

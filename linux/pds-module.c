@@ -232,9 +232,9 @@ static void pds_span_init(struct pds_span *o, struct pds *pds, int index)
 
 	bitmap_zero(o->tdm_open, s->channels);
 
-	o->tdm_seq	= 0;
-	o->hdlc_seq	= 0;
-	o->ctl_seq	= 0;
+	atomic_set(&o->tdm_seq,  0);
+	atomic_set(&o->hdlc_seq, 0);
+	atomic_set(&o->ctl_seq,  0);
 }
 
 static

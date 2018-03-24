@@ -39,7 +39,7 @@ int pds_hdlc_emit(struct dahdi_chan *o, const void *buf, size_t len)
 	h->span		= htons(o->span->offset + 1);
 	h->reserved	= 0;
 	h->flags	= 0;
-	h->seq		= htons(s->hdlc_seq++);
+	h->seq		= htons(atomic_inc_return(&s->hdlc_seq));
 	h->channel	= htons(o->chanpos + 1);
 
 	skb_set_transport_header(skb, 0);
@@ -65,7 +65,7 @@ struct sk_buff *pds_ctl_alloc_skb(struct pds_span *o, int code, unsigned len)
 	h->span		= htons(o->span.offset + 1);
 	h->code		= code;
 	h->flags	= 0;
-	h->seq		= htons(o->ctl_seq++);
+	h->seq		= htons(atomic_inc_return(&o->ctl_seq));
 
 	skb_set_transport_header(skb, 0);
 	return skb;

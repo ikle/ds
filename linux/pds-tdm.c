@@ -111,7 +111,7 @@ static int pds_tdm_emit(struct pds_span *o)
 	h->span		= htons(o->span.offset + 1);
 	h->chunk_size	= DAHDI_CHUNKSIZE;
 	h->flags	= 0;
-	h->seq		= htons(o->tdm_seq++);
+	h->seq		= htons(atomic_inc_return(&o->tdm_seq));
 	h->channel_count = htons(count);
 
 	skb_set_transport_header(skb, 0);
