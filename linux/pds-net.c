@@ -133,12 +133,22 @@ static int dev_queue_xmit_copy(struct sk_buff *skb)
 
 static int pds_ctl_done(struct pds_span *o)
 {
-	int ret = 0;
+	int ret = 0, i;
+	long timeout;
 
-	dev_queue_xmit_copy(o->req.req);
-	schedule_timeout_uninterruptible(HZ / 20);
-	pds_ctl_get_status(o, &ret);
+	for (i = 3; i > 0; --i) {
+		ret = dev_queue_xmit_copy(o->req.req);
+		if (ret != 0)
+			continue;
 
+		for (timeout = HZ / 20; timeout > 0;) {
+			timeout = schedule_timeout_uninterruptible(timeout);
+
+			if (pds_ctl_get_status(o, &ret))
+				goto done;
+		}
+	}
+done:
 	pds_req_end(&o->req);
 	mutex_unlock(&o->ctl_lock);
 	return ret;
