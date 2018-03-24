@@ -12,6 +12,7 @@
 #include <linux/bitops.h>
 #include <linux/hrtimer.h>
 #include <linux/netdevice.h>
+#include <linux/mutex.h>
 
 #include <dahdi/kernel.h>
 
@@ -28,6 +29,8 @@ struct pds_span {
 	DECLARE_BITMAP(tdm_open, PDS_SPAN_CAPACITY);
 
 	atomic_t tdm_seq, hdlc_seq, ctl_seq;
+
+	struct mutex ctl_lock;
 };
 
 struct pds {

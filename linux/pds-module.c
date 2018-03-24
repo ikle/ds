@@ -235,6 +235,8 @@ static void pds_span_init(struct pds_span *o, struct pds *pds, int index)
 	atomic_set(&o->tdm_seq,  0);
 	atomic_set(&o->hdlc_seq, 0);
 	atomic_set(&o->ctl_seq,  0);
+
+	mutex_init(&o->ctl_lock);
 }
 
 static

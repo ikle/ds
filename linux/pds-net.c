@@ -71,17 +71,41 @@ struct sk_buff *pds_ctl_alloc_skb(struct pds_span *o, int code, unsigned len)
 	return skb;
 }
 
+static
+struct sk_buff *pds_ctl_start(struct pds_span *o, int code, unsigned len)
+{
+	struct sk_buff *skb;
+
+	mutex_lock(&o->ctl_lock);
+
+	skb = pds_ctl_alloc_skb(o, code, len);
+	if (skb == NULL)
+		goto no_skb;
+
+	return skb;
+no_skb:
+	mutex_unlock(&o->ctl_lock);
+	return NULL;
+}
+
+static int pds_ctl_done(struct pds_span *o, struct sk_buff *skb)
+{
+	dev_queue_xmit(skb);
+
+	mutex_unlock(&o->ctl_lock);
+	return 0;
+}
+
 int pds_ctl_reset(struct pds_span *o)
 {
 	struct sk_buff *skb;
 
-	skb = pds_ctl_alloc_skb(o, PDS_RESET, 0);
+	skb = pds_ctl_start(o, PDS_RESET, 0);
 	if (skb == NULL)
 		return -ENOMEM;
 
 	pds_debug("%s: emit reset\n", o->span.name);
-	dev_queue_xmit(skb);
-	return 0;
+	return pds_ctl_done(o, skb);
 }
 
 int pds_ctl_setup(struct pds_span *o, int sync, enum pds_line_code code,
@@ -91,7 +115,7 @@ int pds_ctl_setup(struct pds_span *o, int sync, enum pds_line_code code,
 	__be16 *p;
 	size_t len = sizeof (p[0]) * 4;
 
-	skb = pds_ctl_alloc_skb(o, PDS_SETUP, len);
+	skb = pds_ctl_start(o, PDS_SETUP, len);
 	if (skb == NULL)
 		return -ENOMEM;
 
@@ -104,8 +128,7 @@ int pds_ctl_setup(struct pds_span *o, int sync, enum pds_line_code code,
 
 	pds_debug("%s: emit setup (sync = %d, code = %d, framing = %d, sig = %d)\n",
 		  o->span.name, sync, code, framing, sig);
-	dev_queue_xmit(skb);
-	return 0;
+	return pds_ctl_done(o, skb);
 }
 
 int pds_ctl_enslave(struct dahdi_chan *o)
@@ -115,7 +138,7 @@ int pds_ctl_enslave(struct dahdi_chan *o)
 	__be16 *p;
 	size_t len = sizeof (p[0]) * 2;
 
-	skb = pds_ctl_alloc_skb(s, PDS_ENSLAVE, len);
+	skb = pds_ctl_start(s, PDS_ENSLAVE, len);
 	if (skb == NULL)
 		return -ENOMEM;
 
@@ -125,8 +148,7 @@ int pds_ctl_enslave(struct dahdi_chan *o)
 	p[1] = htons(o->master->chanpos + 1);
 
 	pds_debug("%s: emit enslave to %s\n", o->name, o->master->name);
-	dev_queue_xmit(skb);
-	return 0;
+	return pds_ctl_done(s, skb);
 }
 
 int pds_ctl_tdm_open(struct dahdi_chan *o)
@@ -136,7 +158,7 @@ int pds_ctl_tdm_open(struct dahdi_chan *o)
 	__be16 *p;
 	size_t len = sizeof (p[0]) * 1;
 
-	skb = pds_ctl_alloc_skb(s, PDS_OPEN_TDM, len);
+	skb = pds_ctl_start(s, PDS_OPEN_TDM, len);
 	if (skb == NULL)
 		return -ENOMEM;
 
@@ -145,8 +167,7 @@ int pds_ctl_tdm_open(struct dahdi_chan *o)
 	p[0] = htons(o->chanpos + 1);
 
 	pds_debug("%s: emit TDM open\n", o->name);
-	dev_queue_xmit(skb);
-	return 0;
+	return pds_ctl_done(s, skb);
 }
 
 int pds_ctl_hdlc_open(struct dahdi_chan *o)
@@ -156,7 +177,7 @@ int pds_ctl_hdlc_open(struct dahdi_chan *o)
 	__be16 *p;
 	size_t len = sizeof (p[0]) * 1;
 
-	skb = pds_ctl_alloc_skb(s, PDS_OPEN_HDLC, len);
+	skb = pds_ctl_start(s, PDS_OPEN_HDLC, len);
 	if (skb == NULL)
 		return -ENOMEM;
 
@@ -165,8 +186,7 @@ int pds_ctl_hdlc_open(struct dahdi_chan *o)
 	p[0] = htons(o->chanpos + 1);
 
 	pds_debug("%s: emit HDLC open\n", o->name);
-	dev_queue_xmit(skb);
-	return 0;
+	return pds_ctl_done(s, skb);
 }
 
 int pds_ctl_close(struct dahdi_chan *o)
@@ -176,7 +196,7 @@ int pds_ctl_close(struct dahdi_chan *o)
 	__be16 *p;
 	size_t len = sizeof (p[0]) * 1;
 
-	skb = pds_ctl_alloc_skb(s, PDS_CLOSE, len);
+	skb = pds_ctl_start(s, PDS_CLOSE, len);
 	if (skb == NULL)
 		return -ENOMEM;
 
@@ -185,6 +205,5 @@ int pds_ctl_close(struct dahdi_chan *o)
 	p[0] = htons(o->chanpos + 1);
 
 	pds_debug("%s: emit close\n", o->name);
-	dev_queue_xmit(skb);
-	return 0;
+	return pds_ctl_done(s, skb);
 }
