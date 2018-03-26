@@ -80,8 +80,6 @@ static int pds_chan_config(struct file *file, struct dahdi_chan *o,
 		/* force hard HDLC mode */
 		o->flags &= ~(DAHDI_FLAG_FCS | DAHDI_FLAG_HDLC);
 		o->flags |= DAHDI_FLAG_NOSTDTXRX;
-
-		ret = pds_ctl_hdlc_open(o);
 	}
 
 	return ret;
