@@ -400,7 +400,7 @@ static int __init mod_init(void)
 
 	ret = pds_init(&pds0, 0, master);
 	if (ret != 0) {
-		pr_err("pds: cannot initialize davice\n");
+		pr_err("pds: cannot initialize device\n");
 		return ret;
 	}
 
