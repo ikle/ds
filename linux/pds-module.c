@@ -269,6 +269,30 @@ broken:
 	return NET_RX_DROP;
 }
 
+static
+int pds_ctl_rx(struct sk_buff *skb, struct net_device *dev,
+	       struct packet_type *p, struct net_device *orig_dev)
+{
+	struct pds_ctl_header *h = (void *) skb->data;
+	struct pds_span *s;
+
+	if (skb->len < sizeof (*h) || (h->flags & PDS_MESSAGE_REPLY) == 0)
+		goto broken;
+
+	s = pds_find(dev, ntohs(h->span) - 1);
+	if (s == NULL)
+		goto broken;
+
+	pds_debug("%s: got reply for seq = %u\n", s->span.name, h->seq);
+	pds_req_reply(&s->req, h->seq, skb);
+
+	return NET_RX_SUCCESS;
+broken:
+	skb->dev->stats.rx_errors++;
+	dev_kfree_skb_any(skb);
+	return NET_RX_DROP;
+}
+
 static int pds_init(struct pds *o, int index, const char *master)
 {
 	size_t i;
@@ -306,6 +330,12 @@ static int pds_init(struct pds *o, int index, const char *master)
 
 	dev_add_pack(&o->hdlc);
 
+	o->ctl.type	= cpu_to_be16(ETH_P_PDS_CTL);
+	o->ctl.dev	= o->master;
+	o->ctl.func	= pds_ctl_rx;
+
+	dev_add_pack(&o->ctl);
+
 	pds_tdm_init(o);
 	atomic_set(&o->tdm_ref, 0);
 
@@ -324,7 +354,10 @@ static void pds_fini(struct pds *o)
 	pr_info("pds: unregister %s device\n", dev_name(&o->dev->dev));
 
 	pds_tdm_fini(o);
+
+	dev_remove_pack(&o->ctl);
 	dev_remove_pack(&o->hdlc);
+
 	dev_put(o->master);
 	dahdi_unregister_device(o->dev);
 

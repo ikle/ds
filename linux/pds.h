@@ -40,7 +40,7 @@ struct pds {
 	struct pds_span span[4];
 	struct net_device *master;
 
-	struct packet_type hdlc;
+	struct packet_type hdlc, ctl;
 
 	struct hrtimer tdm_timer;
 	atomic_t tdm_ref;
