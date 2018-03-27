@@ -60,6 +60,9 @@ static void pds_tdm_write_sigmap(struct pds_span *o, void *to)
 		bits <<= 4;
 		++i;
 	}
+
+	if ((i % 4) != 0)
+		*sigmap = htons(bits);
 }
 
 static size_t pds_tdm_data_size(size_t count)
