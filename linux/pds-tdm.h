@@ -19,7 +19,7 @@
 
 struct pds_tdm_span {
 	DECLARE_BITMAP(open, PDS_SPAN_CAPACITY);
-	atomic_t seq;
+	__u16 seq;
 };
 
 struct pds_span;

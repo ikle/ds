@@ -114,7 +114,7 @@ static int pds_tdm_emit(struct pds_span *o)
 	h->span		= htons(o->span.offset + 1);
 	h->chunk_size	= DAHDI_CHUNKSIZE;
 	h->flags	= 0;
-	h->seq		= htons(atomic_inc_return(&o->tdm.seq));
+	h->seq		= htons(o->tdm.seq++);
 	h->channel_count = htons(count);
 
 	skb_set_transport_header(skb, 0);
@@ -210,7 +210,7 @@ static enum hrtimer_restart pds_tdm_worker(struct hrtimer *timer)
 void pds_tdm_span_init(struct pds_span *o)
 {
 	bitmap_zero(o->tdm.open, o->span.channels);
-	atomic_set(&o->tdm.seq, 0);
+	o->tdm.seq = 0;
 }
 
 void pds_tdm_init(struct pds *o)
