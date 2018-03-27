@@ -88,7 +88,6 @@ static int pds_chan_config(struct file *file, struct dahdi_chan *o,
 static int pds_chan_open(struct dahdi_chan *o)
 {
 	struct pds *pds = o->pvt;
-	struct pds_span *s = container_of(o->span, struct pds_span, span);
 	int ret;
 
 	pds_debug("%s: open channel\n", o->name);
@@ -103,39 +102,20 @@ static int pds_chan_open(struct dahdi_chan *o)
 	if (ret != 0)
 		return ret;
 
-	spin_lock(&s->span.lock);
-
-	set_bit(o->chanpos, s->tdm_open);
-
-	/* Q: move it into pds_tdm_start? */
-	if (atomic_inc_return(&pds->tdm_ref) == 1)
-		pds_tdm_start(pds);
-
-	spin_unlock(&s->span.lock);
+	pds_tdm_open(pds, o);
 	return 0;
 }
 
 static int pds_chan_close(struct dahdi_chan *o)
 {
 	struct pds *pds = o->pvt;
-	struct pds_span *s = container_of(o->span, struct pds_span, span);
 
 	pds_debug("%s: close channel\n", o->name);
 
 	if (o->chanpos < 0 || o->chanpos >= o->span->channels)
 		return -EINVAL;
 
-	spin_lock(&s->span.lock);
-
-	if (test_bit(o->chanpos, s->tdm_open)) {
-		clear_bit(o->chanpos, s->tdm_open);
-
-		/* Q: move it into pds_tdm_stop? */
-		if (atomic_dec_return(&pds->tdm_ref) == 0)
-			pds_tdm_stop(pds);
-	}
-
-	spin_unlock(&s->span.lock);
+	pds_tdm_close(pds, o);
 	return pds_ctl_close(o);
 }
 
@@ -228,14 +208,13 @@ static void pds_span_init(struct pds_span *o, struct pds *pds, int index)
 	s->ops		= &pds_span_ops;
 	s->offset	= index;
 
-	bitmap_zero(o->tdm_open, s->channels);
-
-	atomic_set(&o->tdm_seq,  0);
 	atomic_set(&o->hdlc_seq, 0);
 	atomic_set(&o->ctl_seq,  0);
 
 	mutex_init(&o->ctl_lock);
 	pds_req_init(&o->req);
+
+	pds_tdm_span_init(o);
 }
 
 static void pds_span_fini(struct pds_span *o)
@@ -337,7 +316,6 @@ static int pds_init(struct pds *o, int index, const char *master)
 	dev_add_pack(&o->ctl);
 
 	pds_tdm_init(o);
-	atomic_set(&o->tdm_ref, 0);
 
 	pr_info("pds: device %s initialized\n", dev_name(&o->dev->dev));
 	return 0;

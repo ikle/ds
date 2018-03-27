@@ -16,23 +16,22 @@
 
 #include <dahdi/kernel.h>
 
+#include "pds-conf.h"
 #include "pds-proto.h"
 #include "pds-req.h"
-
-#define PDS_SPAN_CAPACITY  31
+#include "pds-tdm.h"
 
 struct pds_span {
 	struct dahdi_span span;
 	struct dahdi_chan chan[PDS_SPAN_CAPACITY];
 	struct dahdi_chan *chan_list[PDS_SPAN_CAPACITY];
 
-	/* todo: use span lock to protect it! */
-	DECLARE_BITMAP(tdm_open, PDS_SPAN_CAPACITY);
-
-	atomic_t tdm_seq, hdlc_seq, ctl_seq;
+	atomic_t hdlc_seq, ctl_seq;
 
 	struct mutex ctl_lock;
 	struct pds_req req;
+
+	struct pds_tdm_span tdm;
 };
 
 struct pds {
@@ -42,8 +41,7 @@ struct pds {
 
 	struct packet_type hdlc, ctl;
 
-	struct hrtimer tdm_timer;
-	atomic_t tdm_ref;
+	struct pds_tdm tdm;
 };
 
 struct pds_span *pds_find(struct net_device *dev, unsigned spanno);
@@ -70,13 +68,6 @@ int pds_ctl_enslave(struct dahdi_chan *o);
 int pds_ctl_tdm_open(struct dahdi_chan *o);
 int pds_ctl_hdlc_open(struct dahdi_chan *o);
 int pds_ctl_close(struct dahdi_chan *o);
-
-/* TDM worker */
-
-void pds_tdm_init(struct pds *o);
-void pds_tdm_fini(struct pds *o);
-void pds_tdm_start(struct pds *o);
-void pds_tdm_stop(struct pds *o);
 
 /* debug helpers */
 
