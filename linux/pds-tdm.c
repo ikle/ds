@@ -37,9 +37,9 @@ static void pds_tdm_read_sigmap(struct pds_span *o, const void *from)
 		if ((i % 4) == 0)
 			bits = ntohs(*sigmap++);
 
-		o->chan[c].rxsig = bits & 0xf;
+		o->chan[c].rxsig = (bits >> 12) & 0xf;
 
-		bits >>= 4;
+		bits <<= 4;
 		++i;
 	}
 }
