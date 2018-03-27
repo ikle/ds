@@ -103,7 +103,8 @@ enum pds_code {
 	PDS_OPEN_TDM,
 	PDS_OPEN_HDLC,
 	PDS_CLOSE,
-	PDS_NOTIFY = 128,
+	PDS_NOTIFY_ALARM = 128,
+	PDS_NOTIFY_COUNTS,
 };
 
 /*
@@ -185,15 +186,45 @@ enum pds_signaling {
  *
  *   - unmap channel from any stream if any (should always succeed).
  *
- * Notify: state
+ * Notify Alarm: alarms
  *
- *   - got state event from device, do not reply;
- *   - if LoS is detected in span with open channels then event should be
- *     sent by device periodically (1 per second is more then needed).
+ *   - got alarm map from device, do not reply;
+ *   - this event should be sent by device periodically (1 per second is
+ *     more then needed).
  */
 
-#define PDS_NOTIFY_LOS		BIT(0)
-#define PDS_NOTIFY_PSLIP	BIT(1)
-#define PDS_NOTIFY_NSLIP	BIT(2)
+enum pds_alarm {
+	PDS_ALARM_RECOVER	= BIT(0),	/* Recovering from alarm */
+	PDS_ALARM_LOOPBACK	= BIT(1),	/* In loopback		 */
+	PDS_ALARM_YELLOW	= BIT(2),	/* Yellow Alarm		 */
+	PDS_ALARM_RED		= BIT(3),	/* Red Alarm		 */
+	PDS_ALARM_BLUE		= BIT(4),	/* Blue Alarm		 */
+	PDS_ALARM_NOTOPEN	= BIT(5),	/* Span is not open	 */
+
+	PDS_ALARM_LOS		= BIT(8),	/* Loss of Signal	     */
+	PDS_ALARM_LFA		= BIT(9),	/* Loss of Frame Alignment   */
+	PDS_ALARM_LMFA		= BIT(10),	/* Loss of Multi-Frame Align */
+};
+
+/*
+ * Notify Counts: counts
+ *
+ *   - got counts from device, do not reply.
+ *   - this event should be sent by device periodically (1 per second is
+ *     more then needed).
+ */
+
+struct pds_counts {
+	__be32 fe;		/* Framing error counter		*/
+	__be32 cv;		/* Coding violations counter		*/
+	__be32 bpv;		/* Bipolar Violation counter		*/
+	__be32 crc4;		/* CRC4 error counter			*/
+	__be32 ebit;		/* current E-bit error count		*/
+	__be32 fas;		/* current FAS error count		*/
+	__be32 be;		/* current bit error count		*/
+	__be32 prbs;		/* current PRBS detected pattern	*/
+	__be32 errsec;		/* errored seconds			*/
+	__be32 timingslips;	/* Clock slips				*/
+};
 
 #endif  /* PDS_PROTO_H */
