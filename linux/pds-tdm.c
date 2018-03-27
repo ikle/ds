@@ -107,7 +107,7 @@ static int pds_tdm_emit(struct pds_span *o)
 	skb = pds_alloc_skb(pds_from_span(o), ETH_P_PDS_TDM,
 			    sizeof(*h) + sigmap_size + data_size);
 	if (skb == NULL)
-		return -ENOMEM;
+		goto no_skb;
 
 	h = (void *) skb_put(skb, sizeof(*h));
 
@@ -124,6 +124,9 @@ static int pds_tdm_emit(struct pds_span *o)
 	spin_unlock(&o->span.lock);
 	dev_queue_xmit(skb);
 	return 0;
+no_skb:
+	spin_unlock(&o->span.lock);
+	return -ENOMEM;
 }
 
 static bool pds_tdm_consume(struct net_device *dev,
