@@ -184,7 +184,11 @@ static void pds_span_init(struct pds_span *o, struct pds *pds, int index)
 	snprintf(s->desc, sizeof(s->desc), "DAHDI PDS Device %s Port %d",
 		 device, index);
 
-	s->spantype	= "E1";  /* 2.11: SPANTYPE_DIGITAL_E1 */
+#ifdef DAHDI_NG
+	s->spantype	= SPANTYPE_DIGITAL_E1;
+#else
+	s->spantype	= "E1";
+#endif
 	s->deflaw	= DAHDI_LAW_ALAW;
 	s->lineconfig	= DAHDI_CONFIG_HDB3 | DAHDI_CONFIG_CCS;
 	s->linecompat	= DAHDI_CONFIG_AMI | DAHDI_CONFIG_HDB3 |
@@ -290,7 +294,11 @@ static int pds_ctl_notify_counts(struct pds_span *o, struct sk_buff *skb)
 	c->prbs   = ntohl(p[7]);
 	c->errsec = ntohl(p[8]);
 
+#ifdef DAHDI_NG
+	c->timingslips	= ntohl(p[9]);
+#else
 	o->span.timingslips = ntohl(p[9]);
+#endif
 
 	dev_kfree_skb_any(skb);
 	return 1;
