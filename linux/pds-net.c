@@ -1,7 +1,7 @@
 /*
  * PDS network helpers
  *
- * Copyright (c) 2017 Alexei A. Smekalkine <ikle@ikle.ru>
+ * Copyright (c) 2017-2018 Alexei A. Smekalkine <ikle@ikle.ru>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  */
