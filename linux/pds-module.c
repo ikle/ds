@@ -248,6 +248,25 @@ broken:
 	return NET_RX_DROP;
 }
 
+static int pds_ctl_notify_alarm(struct pds_span *o, struct sk_buff *skb)
+{
+	struct pds_ctl_header *h = (void *) skb->data;
+	__be16 *p;
+
+	if (h->code != PDS_NOTIFY_ALARM)
+		return 0;
+
+	p = (void *) skb_pull(skb, sizeof (*h));
+	if (p == NULL || skb->len < 2)
+		return 0;
+
+	o->span.alarms = ntohs(p[0]);
+	dahdi_alarm_notify(&o->span);
+
+	dev_kfree_skb_any(skb);
+	return 1;
+}
+
 static
 int pds_ctl_rx(struct sk_buff *skb, struct net_device *dev,
 	       struct packet_type *p, struct net_device *orig_dev)
@@ -255,11 +274,17 @@ int pds_ctl_rx(struct sk_buff *skb, struct net_device *dev,
 	struct pds_ctl_header *h = (void *) skb->data;
 	struct pds_span *s;
 
-	if (skb->len < sizeof (*h) || (h->flags & PDS_MESSAGE_REPLY) == 0)
+	if (skb->len < sizeof (*h))
 		goto broken;
 
 	s = pds_find(dev, ntohs(h->span) - 1);
 	if (s == NULL)
+		goto broken;
+
+	if (pds_ctl_notify_alarm(s, skb))
+		return NET_RX_SUCCESS;
+
+	if ((h->flags & PDS_MESSAGE_REPLY) == 0)
 		goto broken;
 
 	pds_debug("%s: got reply for seq = %u\n", s->span.name, h->seq);
