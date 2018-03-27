@@ -23,6 +23,10 @@ typedef __u16    __be16;
 
 #endif
 
+#ifndef BIT
+#define BIT(n)  (1UL << (n))
+#endif
+
 /*
  * PDS TDM event, EtherType = 0x7a00
  *
