@@ -267,6 +267,35 @@ static int pds_ctl_notify_alarm(struct pds_span *o, struct sk_buff *skb)
 	return 1;
 }
 
+static int pds_ctl_notify_counts(struct pds_span *o, struct sk_buff *skb)
+{
+	struct pds_ctl_header *h = (void *) skb->data;
+	__be32 *p;
+	struct dahdi_count *c = &o->span.count;
+
+	if (h->code != PDS_NOTIFY_COUNTS)
+		return 0;
+
+	p = (void *) skb_pull(skb, sizeof (*h));
+	if (p == NULL || skb->len < 4 * 10)
+		return 0;
+
+	c->fe     = ntohl(p[0]);
+	c->cv     = ntohl(p[1]);
+	c->bpv    = ntohl(p[2]);
+	c->crc4   = ntohl(p[3]);
+	c->ebit   = ntohl(p[4]);
+	c->fas    = ntohl(p[5]);
+	c->be     = ntohl(p[6]);
+	c->prbs   = ntohl(p[7]);
+	c->errsec = ntohl(p[8]);
+
+	o->span.timingslips = ntohl(p[9]);
+
+	dev_kfree_skb_any(skb);
+	return 1;
+}
+
 static
 int pds_ctl_rx(struct sk_buff *skb, struct net_device *dev,
 	       struct packet_type *p, struct net_device *orig_dev)
@@ -281,7 +310,7 @@ int pds_ctl_rx(struct sk_buff *skb, struct net_device *dev,
 	if (s == NULL)
 		goto broken;
 
-	if (pds_ctl_notify_alarm(s, skb))
+	if (pds_ctl_notify_alarm(s, skb) || pds_ctl_notify_counts(s, skb))
 		return NET_RX_SUCCESS;
 
 	if ((h->flags & PDS_MESSAGE_REPLY) == 0)
