@@ -264,7 +264,10 @@ static int pds_ctl_notify_alarm(struct pds_span *o, struct sk_buff *skb)
 	if (p == NULL || skb->len < 2)
 		return 0;
 
+	spin_lock(&o->span.lock);
 	o->span.alarms = ntohs(p[0]);
+	spin_unlock(&o->span.lock);
+
 	dahdi_alarm_notify(&o->span);
 
 	dev_kfree_skb_any(skb);
@@ -284,6 +287,8 @@ static int pds_ctl_notify_counts(struct pds_span *o, struct sk_buff *skb)
 	if (p == NULL || skb->len < 4 * 10)
 		return 0;
 
+	spin_lock(&o->span.lock);
+
 	c->fe     = ntohl(p[0]);
 	c->cv     = ntohl(p[1]);
 	c->bpv    = ntohl(p[2]);
@@ -299,6 +304,8 @@ static int pds_ctl_notify_counts(struct pds_span *o, struct sk_buff *skb)
 #else
 	o->span.timingslips = ntohl(p[9]);
 #endif
+
+	spin_unlock(&o->span.lock);
 
 	dev_kfree_skb_any(skb);
 	return 1;
