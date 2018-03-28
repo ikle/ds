@@ -171,7 +171,7 @@ enum pds_signaling {
  */
 
 /*
- * Enslave: channel, slave-channel
+ * Enslave: channel, master-channel
  *
  *   - remove channel from previous master slave list if any;
  *   - if slave-channel ≠ channel then add it to channel slave list.
