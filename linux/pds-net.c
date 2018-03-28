@@ -10,6 +10,21 @@
 
 #include "pds.h"
 
+struct sk_buff *pds_rx_prepare(struct sk_buff *skb)
+{
+	if (skb->pkt_type == PACKET_OTHERHOST)
+		goto drop;
+
+	if ((skb = skb_share_check(skb, GFP_ATOMIC)) == NULL)
+		return NULL;
+
+	if (!skb_is_nonlinear(skb) || skb_linearize(skb) == 0)
+		return skb;
+drop:
+	kfree_skb(skb);
+	return NULL;
+}
+
 struct sk_buff *pds_alloc_skb(struct pds *pds, int type, unsigned len)
 {
 	struct net_device *dev = pds->master;

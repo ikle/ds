@@ -13,6 +13,7 @@
 #include <linux/hrtimer.h>
 #include <linux/netdevice.h>
 #include <linux/mutex.h>
+#include <linux/skbuff.h>
 
 #include <dahdi/kernel.h>
 
@@ -54,6 +55,8 @@ static inline struct pds *pds_from_span(struct pds_span *o)
 }
 
 /* network helpers */
+
+struct sk_buff *pds_rx_prepare(struct sk_buff *skb);
 
 struct sk_buff *pds_alloc_skb(struct pds *pds, int type, unsigned len);
 

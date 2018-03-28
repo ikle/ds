@@ -233,6 +233,9 @@ int pds_hdlc_rx(struct sk_buff *skb, struct net_device *dev,
 	struct pds_hdlc_header *h = (void *) skb->data;
 	struct dahdi_chan *c;
 
+	if ((skb = pds_rx_prepare(skb)) == NULL)
+		return NET_RX_DROP;
+
 	if (skb_pull(skb, sizeof (*h)) == NULL)
 		goto broken;
 
@@ -244,11 +247,11 @@ int pds_hdlc_rx(struct sk_buff *skb, struct net_device *dev,
 	dahdi_hdlc_putbuf(c, skb->data, skb->len);
 	dahdi_hdlc_finish(c);
 
-	dev_kfree_skb_any(skb);
+	kfree_skb(skb);
 	return NET_RX_SUCCESS;
 broken:
 	skb->dev->stats.rx_errors++;
-	dev_kfree_skb_any(skb);
+	kfree_skb(skb);
 	return NET_RX_DROP;
 }
 
@@ -270,7 +273,7 @@ static int pds_ctl_notify_alarm(struct pds_span *o, struct sk_buff *skb)
 
 	dahdi_alarm_notify(&o->span);
 
-	dev_kfree_skb_any(skb);
+	kfree_skb(skb);
 	return 1;
 }
 
@@ -307,7 +310,7 @@ static int pds_ctl_notify_counts(struct pds_span *o, struct sk_buff *skb)
 
 	spin_unlock(&o->span.lock);
 
-	dev_kfree_skb_any(skb);
+	kfree_skb(skb);
 	return 1;
 }
 
@@ -317,6 +320,9 @@ int pds_ctl_rx(struct sk_buff *skb, struct net_device *dev,
 {
 	struct pds_ctl_header *h = (void *) skb->data;
 	struct pds_span *s;
+
+	if ((skb = pds_rx_prepare(skb)) == NULL)
+		return NET_RX_DROP;
 
 	if (skb->len < sizeof (*h))
 		goto broken;
@@ -337,7 +343,7 @@ int pds_ctl_rx(struct sk_buff *skb, struct net_device *dev,
 	return NET_RX_SUCCESS;
 broken:
 	skb->dev->stats.rx_errors++;
-	dev_kfree_skb_any(skb);
+	kfree_skb(skb);
 	return NET_RX_DROP;
 }
 

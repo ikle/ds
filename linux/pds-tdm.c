@@ -173,11 +173,10 @@ static int pds_tdm_recv(struct sk_buff *skb, struct net_device *dev,
 {
 	bool ok = false;
 
-	if ((skb = skb_share_check(skb, GFP_ATOMIC)) == NULL)
+	if ((skb = pds_rx_prepare(skb)) == NULL)
 		return NET_RX_DROP;
 
-	if (!skb_is_nonlinear(skb) || skb_linearize(skb) == 0)
-		ok = pds_tdm_consume(dev, skb->data, skb->len);
+	ok = pds_tdm_consume(dev, skb->data, skb->len);
 
 	kfree_skb(skb);
 	return ok ? NET_RX_SUCCESS : NET_RX_DROP;
