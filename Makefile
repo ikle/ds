@@ -16,9 +16,12 @@ INSTALL_MOD_OPTS += INSTALL_MOD_STRIP=1
 
 all:
 	make -C $(KSRC) M=$(CURDIR)/linux $(MODULES)
+	make -C tools
 
 clean:
 	make -C $(KSRC) M=$(CURDIR)/linux clean
+	make -C tools clean
 
 install:
 	make -C $(KSRC) M=$(CURDIR)/linux $(INSTALL_MOD_OPTS) modules_install
+	make -C tools install
