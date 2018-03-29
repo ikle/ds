@@ -119,14 +119,13 @@ static int pds_error_to_errno(enum pds_error e)
 static int pds_ctl_get_status(struct pds_span *o, int *ret)
 {
 	struct sk_buff *reply = pds_req_result(&o->req);
-	struct pds_ctl_header *h;
-	__be16 *p;
+	struct pds_ctl_status *p;
 	int found = 0;
 
 	if (reply != NULL) {
-		if (reply->len >= (sizeof (*h) + 2)) {
-			p = (void *) skb_pull(reply, sizeof (*h));
-			*ret = -pds_error_to_errno(ntohs(p[0]));
+		if (reply->len >= (sizeof (*p))) {
+			p = (void *) reply->data;
+			*ret = -pds_error_to_errno(ntohs(p->status));
 			found = 1;
 		}
 

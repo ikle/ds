@@ -130,6 +130,11 @@ enum pds_error {
 	PDS_STATUS_BUSY,	/* device or resource busy	*/
 };
 
+struct pds_ctl_status {
+	struct pds_ctl_header header;
+	__u16 status;  /* one from pds_error */
+};
+
 /*
  * Reset: no arguments required
  *
