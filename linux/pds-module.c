@@ -262,6 +262,8 @@ static int pds_ctl_notify_alarms(struct pds_span *o, struct sk_buff *skb)
 	if (skb->len < sizeof (*p) || p->header.code != PDS_NOTIFY_ALARMS)
 		return 0;
 
+	pds_debug("%s: got alarms\n", o->span.name);
+
 	spin_lock(&o->span.lock);
 	o->span.alarms = ntohs(p->alarms);
 	spin_unlock(&o->span.lock);
@@ -280,6 +282,8 @@ static int pds_ctl_notify_counts(struct pds_span *o, struct sk_buff *skb)
 
 	if (skb->len < sizeof (*p) || p->header.code != PDS_NOTIFY_COUNTS)
 		return 0;
+
+	pds_debug("%s: got counts\n", o->span.name);
 
 	spin_lock(&o->span.lock);
 
