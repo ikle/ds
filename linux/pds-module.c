@@ -332,7 +332,8 @@ int pds_ctl_rx(struct sk_buff *skb, struct net_device *dev,
 	if ((h->flags & PDS_MESSAGE_REPLY) == 0)
 		goto broken;
 
-	pds_debug("%s: got reply for seq = %u\n", s->span.name, h->seq);
+	pds_debug("%s: got reply for seq = %u\n", s->span.name,
+		  ntohs (h->seq));
 	pds_req_reply(&s->req, h->seq, skb);
 
 	return NET_RX_SUCCESS;
