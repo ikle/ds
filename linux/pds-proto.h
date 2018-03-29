@@ -243,6 +243,7 @@ struct pds_counts {
 
 struct pds_ctl_counts {
 	struct pds_ctl_header header;
+	__u16 align;
 	struct pds_counts counts;
 };
 
