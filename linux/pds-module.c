@@ -257,18 +257,13 @@ broken:
 
 static int pds_ctl_notify_alarm(struct pds_span *o, struct sk_buff *skb)
 {
-	struct pds_ctl_header *h = (void *) skb->data;
-	__be16 *p;
+	struct pds_ctl_alarms *p = (void *) skb->data;
 
-	if (h->code != PDS_NOTIFY_ALARM)
-		return 0;
-
-	p = (void *) skb_pull(skb, sizeof (*h));
-	if (p == NULL || skb->len < 2)
+	if (skb->len < sizeof (*p) || p->header.code != PDS_NOTIFY_ALARM)
 		return 0;
 
 	spin_lock(&o->span.lock);
-	o->span.alarms = ntohs(p[0]);
+	o->span.alarms = ntohs(p->alarms);
 	spin_unlock(&o->span.lock);
 
 	dahdi_alarm_notify(&o->span);

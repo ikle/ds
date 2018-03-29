@@ -215,6 +215,11 @@ enum pds_alarm {
 	PDS_ALARM_LMFA		= BIT(10),	/* Loss of Multi-Frame Align */
 };
 
+struct pds_ctl_alarms {
+	struct pds_ctl_header header;
+	__u16 alarms;  /* bitwise ored pds_alarm */
+};
+
 /*
  * Notify Counts: counts
  *
