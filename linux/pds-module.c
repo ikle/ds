@@ -274,33 +274,29 @@ static int pds_ctl_notify_alarms(struct pds_span *o, struct sk_buff *skb)
 
 static int pds_ctl_notify_counts(struct pds_span *o, struct sk_buff *skb)
 {
-	struct pds_ctl_header *h = (void *) skb->data;
-	__be32 *p;
+	struct pds_ctl_counts *p = (void *) skb->data;
+	struct pds_counts *v = &p->counts;
 	struct dahdi_count *c = &o->span.count;
 
-	if (h->code != PDS_NOTIFY_COUNTS)
-		return 0;
-
-	p = (void *) skb_pull(skb, sizeof (*h));
-	if (p == NULL || skb->len < 4 * 10)
+	if (skb->len < sizeof (*p) || p->header.code != PDS_NOTIFY_COUNTS)
 		return 0;
 
 	spin_lock(&o->span.lock);
 
-	c->fe     = ntohl(p[0]);
-	c->cv     = ntohl(p[1]);
-	c->bpv    = ntohl(p[2]);
-	c->crc4   = ntohl(p[3]);
-	c->ebit   = ntohl(p[4]);
-	c->fas    = ntohl(p[5]);
-	c->be     = ntohl(p[6]);
-	c->prbs   = ntohl(p[7]);
-	c->errsec = ntohl(p[8]);
+	c->fe     = ntohl(v->fe);
+	c->cv     = ntohl(v->cv);
+	c->bpv    = ntohl(v->bpv);
+	c->crc4   = ntohl(v->crc4);
+	c->ebit   = ntohl(v->ebit);
+	c->fas    = ntohl(v->fas);
+	c->be     = ntohl(v->be);
+	c->prbs   = ntohl(v->prbs);
+	c->errsec = ntohl(v->errsec);
 
 #ifdef DAHDI_NG
-	c->timingslips	= ntohl(p[9]);
+	c->timingslips = ntohl(v->timingslips);
 #else
-	o->span.timingslips = ntohl(p[9]);
+	o->span.timingslips = ntohl(v->timingslips);
 #endif
 
 	spin_unlock(&o->span.lock);

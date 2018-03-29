@@ -241,4 +241,9 @@ struct pds_counts {
 	__be32 timingslips;	/* Clock slips				*/
 };
 
+struct pds_ctl_counts {
+	struct pds_ctl_header header;
+	struct pds_counts counts;
+};
+
 #endif  /* PDS_PROTO_H */
