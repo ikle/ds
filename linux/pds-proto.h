@@ -107,7 +107,7 @@ enum pds_code {
 	PDS_OPEN_TDM,
 	PDS_OPEN_HDLC,
 	PDS_CLOSE,
-	PDS_NOTIFY_ALARM = 128,
+	PDS_NOTIFY_ALARMS = 128,
 	PDS_NOTIFY_COUNTS,
 };
 
@@ -195,7 +195,7 @@ enum pds_signaling {
  *
  *   - unmap channel from any stream if any (should always succeed).
  *
- * Notify Alarm: alarms
+ * Notify Alarms: alarms
  *
  *   - got alarm map from device, do not reply;
  *   - this event should be sent by device periodically (1 per second is

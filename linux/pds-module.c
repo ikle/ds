@@ -255,11 +255,11 @@ broken:
 	return NET_RX_DROP;
 }
 
-static int pds_ctl_notify_alarm(struct pds_span *o, struct sk_buff *skb)
+static int pds_ctl_notify_alarms(struct pds_span *o, struct sk_buff *skb)
 {
 	struct pds_ctl_alarms *p = (void *) skb->data;
 
-	if (skb->len < sizeof (*p) || p->header.code != PDS_NOTIFY_ALARM)
+	if (skb->len < sizeof (*p) || p->header.code != PDS_NOTIFY_ALARMS)
 		return 0;
 
 	spin_lock(&o->span.lock);
@@ -326,7 +326,7 @@ int pds_ctl_rx(struct sk_buff *skb, struct net_device *dev,
 	if (s == NULL)
 		goto broken;
 
-	if (pds_ctl_notify_alarm(s, skb) || pds_ctl_notify_counts(s, skb))
+	if (pds_ctl_notify_alarms(s, skb) || pds_ctl_notify_counts(s, skb))
 		return NET_RX_SUCCESS;
 
 	if ((h->flags & PDS_MESSAGE_REPLY) == 0)
