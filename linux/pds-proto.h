@@ -174,7 +174,7 @@ enum pds_signaling {
  * Enslave: channel, master-channel
  *
  *   - remove channel from previous master slave list if any;
- *   - if slave-channel ≠ channel then add it to channel slave list.
+ *   - if channel ≠ master-channel then add it to channel slave list.
  *
  * Open TDM: channel
  *
