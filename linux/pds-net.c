@@ -52,7 +52,7 @@ int pds_hdlc_emit(struct dahdi_chan *o, const void *buf, size_t len)
 	h = (void *) skb_put(skb, sizeof(*h));
 
 	h->span		= htons(o->span->offset + 1);
-	h->reserved	= 0;
+	h->cutoff	= len < 256 ? len : 0;
 	h->flags	= 0;
 	h->seq		= htons(atomic_inc_return(&s->hdlc_seq));
 	h->channel	= htons(o->chanpos + 1);

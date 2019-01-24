@@ -232,6 +232,7 @@ int pds_hdlc_rx(struct sk_buff *skb, struct net_device *dev,
 {
 	struct pds_hdlc_header *h = (void *) skb->data;
 	struct dahdi_chan *c;
+	unsigned len;
 
 	if ((skb = pds_rx_prepare(skb)) == NULL)
 		return NET_RX_DROP;
@@ -239,12 +240,16 @@ int pds_hdlc_rx(struct sk_buff *skb, struct net_device *dev,
 	if (skb_pull(skb, sizeof (*h)) == NULL)
 		goto broken;
 
+	if (h->cutoff != 0 && h->cutoff > skb->len)
+		goto broken;
+
 	c = pds_find_chan(dev, ntohs(h->span) - 1, ntohs(h->channel) - 1);
 	if (c == NULL)
 		goto broken;
 
-	pds_debug("%s: got %u bytes\n", c->name, skb->len);
-	dahdi_hdlc_putbuf(c, skb->data, skb->len);
+	len = h->cutoff != 0 ? h->cutoff : skb->len;
+	pds_debug("%s: got %u bytes\n", c->name, len);
+	dahdi_hdlc_putbuf(c, skb->data, len);
 	dahdi_hdlc_finish(c);
 
 	kfree_skb(skb);

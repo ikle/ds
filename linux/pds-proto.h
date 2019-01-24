@@ -69,13 +69,16 @@ struct pds_tdm_header {
 
 /*
  * PDS HDLC event, EtherType = 0x7a01
+ *
+ * If cutoff field is not zero then it denotes real payload size: real
+ * Ethernet payload padded to 60 by zeroes always.
  */
 
 #define ETH_P_PDS_HDLC	0x7a01
 
 struct pds_hdlc_header {
 	__be16	span;
-	__u8	reserved;	/* should be zero */
+	__u8	cutoff;		/* truncate data to cutoff if not zero */
 	__u8	flags;
 	__be16	seq;
 	__be16	channel;	/* master channel */
