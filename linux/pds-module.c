@@ -232,7 +232,6 @@ int pds_hdlc_rx(struct sk_buff *skb, struct net_device *dev,
 {
 	struct pds_hdlc_header *h = (void *) skb->data;
 	struct dahdi_chan *c;
-	unsigned len;
 
 	if ((skb = pds_rx_prepare(skb)) == NULL)
 		return NET_RX_DROP;
@@ -247,19 +246,21 @@ int pds_hdlc_rx(struct sk_buff *skb, struct net_device *dev,
 	if (c == NULL)
 		goto broken;
 
-	len = h->cutoff != 0 ? h->cutoff : skb->len;
-	pds_debug("%s: got %u bytes\n", c->name, len);
+	if (h->cutoff != 0)
+		skb_trim(skb, h->cutoff);
+
+	pds_debug("%s: got %u bytes\n", c->name, skb->len);
 
 	if (dahdi_have_netdev(c)) {
 		dev = c->hdlcnetdev->netdev;
 		dev->stats.rx_packets++;
-		dev->stats.rx_bytes += len;
+		dev->stats.rx_bytes += skb->len;
 
 		skb->protocol = hdlc_type_trans(skb, dev);
 		netif_rx(skb);
 	}
 	else {
-		dahdi_hdlc_putbuf(c, skb->data, len);
+		dahdi_hdlc_putbuf(c, skb->data, skb->len);
 		dahdi_hdlc_finish(c);
 		kfree_skb(skb);
 	}
