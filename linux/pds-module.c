@@ -132,6 +132,15 @@ static int pds_chan_rbsbits(struct dahdi_chan *o, int bits)
 	return 0;
 }
 
+static struct net_device *dahdi_get_netdev(struct dahdi_chan *o);
+
+static unsigned dahdi_chan_get_mtu(struct dahdi_chan *o)
+{
+	struct net_device *dev = dahdi_get_netdev(o);
+
+	return dev == NULL ? 2000 : dev->mtu;
+}
+
 static void pds_chan_hdlc_hard_xmit(struct dahdi_chan *o)
 {
 	struct sk_buff *skb;
@@ -140,7 +149,7 @@ static void pds_chan_hdlc_hard_xmit(struct dahdi_chan *o)
 	unsigned len;
 
 	do {
-		len = 2000;
+		len = dahdi_chan_get_mtu(o);
 		skb = pds_hdlc_alloc_skb(o, len);
 		if (skb == NULL)
 			break;
