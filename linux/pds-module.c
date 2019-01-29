@@ -227,6 +227,24 @@ static void pds_span_fini(struct pds_span *o)
 }
 
 static
+struct net_device *dahdi_get_netdev(struct dahdi_chan *c)
+{
+	unsigned long flags;
+	struct net_device *dev;
+
+	spin_lock_irqsave(&c->lock, flags);
+
+	if (dahdi_have_netdev(c))
+		dev = c->hdlcnetdev->netdev;
+
+	if ((dev->flags & IFF_UP) == 0)
+		dev = NULL;
+
+	spin_unlock_irqrestore(&c->lock, flags);
+	return dev;
+}
+
+static
 int pds_hdlc_rx(struct sk_buff *skb, struct net_device *dev,
 		struct packet_type *p, struct net_device *orig_dev)
 {
@@ -251,8 +269,8 @@ int pds_hdlc_rx(struct sk_buff *skb, struct net_device *dev,
 
 	pds_debug("%s: got %u bytes\n", c->name, skb->len);
 
-	if (dahdi_have_netdev(c)) {
-		dev = c->hdlcnetdev->netdev;
+	dev = dahdi_get_netdev(c);
+	if (dev != NULL) {
 		dev->stats.rx_packets++;
 		dev->stats.rx_bytes += skb->len;
 
