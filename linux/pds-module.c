@@ -16,6 +16,7 @@
 #include "pds.h"
 
 bool debug = false;
+bool fake  = false;
 static char *master = NULL;
 
 static int pds_span_config(struct file *file, struct dahdi_span *o,
@@ -521,6 +522,9 @@ MODULE_LICENSE("Dual BSD/GPL");
 
 module_param(debug, bool, 0644);
 MODULE_PARM_DESC(debug, "Enable data event debug");
+
+module_param(fake, bool, 0644);
+MODULE_PARM_DESC(fake, "Enable fake mode: allow to work without real device");
 
 module_param(master, charp, 0644);
 MODULE_PARM_DESC(master, "Master network device name");

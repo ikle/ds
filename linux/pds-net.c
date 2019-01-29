@@ -10,6 +10,8 @@
 
 #include "pds.h"
 
+extern bool fake;
+
 struct sk_buff *pds_rx_prepare(struct sk_buff *skb)
 {
 	if (skb->pkt_type == PACKET_OTHERHOST)
@@ -143,7 +145,7 @@ static int dev_queue_xmit_copy(struct sk_buff *skb)
 
 static int pds_ctl_done(struct pds_span *o)
 {
-	int ret = 0, i;
+	int ret = fake ? 0 : -ETIMEDOUT, i;
 	long timeout;
 
 	for (i = 3; i > 0; --i) {
