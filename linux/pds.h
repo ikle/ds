@@ -61,7 +61,6 @@ struct sk_buff *pds_rx_prepare(struct sk_buff *skb);
 struct sk_buff *pds_alloc_skb(struct pds *pds, int type, unsigned len);
 
 struct sk_buff *pds_hdlc_alloc_skb(struct dahdi_chan *o, unsigned len);
-int pds_hdlc_consume(struct dahdi_chan *o, const void *buf, size_t len);
 
 int pds_ctl_reset(struct pds_span *o);
 int pds_ctl_setup(struct pds_span *o, int sync, enum pds_line_code code,
