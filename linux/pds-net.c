@@ -39,7 +39,8 @@ struct sk_buff *pds_alloc_skb(struct pds *pds, int type, unsigned len)
 	return skb;
 }
 
-int pds_hdlc_emit(struct dahdi_chan *o, const void *buf, size_t len)
+static
+struct sk_buff *pds_hdlc_alloc_skb(struct dahdi_chan *o, unsigned len)
 {
 	struct pds_span *s = container_of(o->span, struct pds_span, span);
 	struct sk_buff *skb;
@@ -47,7 +48,7 @@ int pds_hdlc_emit(struct dahdi_chan *o, const void *buf, size_t len)
 
 	skb = pds_alloc_skb(o->pvt, ETH_P_PDS_HDLC, sizeof(*h) + len);
 	if (skb == NULL)
-		return -ENOMEM;
+		return NULL;
 
 	h = (void *) skb_put(skb, sizeof(*h));
 
@@ -58,6 +59,17 @@ int pds_hdlc_emit(struct dahdi_chan *o, const void *buf, size_t len)
 	h->channel	= htons(o->chanpos + 1);
 
 	skb_set_transport_header(skb, 0);
+	return skb;
+}
+
+int pds_hdlc_emit(struct dahdi_chan *o, const void *buf, size_t len)
+{
+	struct sk_buff *skb;
+
+	skb = pds_hdlc_alloc_skb(o, len);
+	if (skb == NULL)
+		return -ENOMEM;
+
 	memcpy(skb_put(skb, len), buf, len);
 
 	pds_debug("%s: emit HDLC frame, %zu bytes\n", o->name, len);
