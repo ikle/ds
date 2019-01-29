@@ -1,7 +1,7 @@
 /*
  * DAHDI PDS tunnel
  *
- * Copyright (c) 2017-2018 Alexei A. Smekalkine <ikle@ikle.ru>
+ * Copyright (c) 2017-2019 Alexei A. Smekalkine <ikle@ikle.ru>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  */
@@ -134,28 +134,35 @@ static int pds_chan_rbsbits(struct dahdi_chan *o, int bits)
 
 static void pds_chan_hdlc_hard_xmit(struct dahdi_chan *o)
 {
+	struct sk_buff *skb;
 	struct pds *pds = o->pvt;
 	int ret;
-	char buf[2000];
 	unsigned len;
 
 	do {
-		len = sizeof (buf);
-		ret = dahdi_hdlc_getbuf(o, buf, &len);
+		len = 2000;
+		skb = pds_hdlc_alloc_skb(o, len);
+		if (skb == NULL)
+			break;
+
+		ret = dahdi_hdlc_getbuf(o, skb_tail_pointer(skb), &len);
 
 		if (!netif_running(pds->master)) {
 			pds_debug("%s: drop %u bytes, no link\n",
 				  o->name, len);
+			kfree_skb(skb);
 			continue;  /* master is down, eat data */
 		}
 
 		if (ret == 0) {
 			pr_warn("%s: drop %u bytes, overrun\n", o->name, len);
+			kfree_skb(skb);
 			continue;
 		}
 
 		pds_debug("%s: send %u bytes\n", o->name, len);
-		pds_hdlc_emit(o, buf, len);
+		skb_put(skb, len);
+		dev_queue_xmit(skb);
 	}
 	while (ret >= 0);
 }

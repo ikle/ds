@@ -1,7 +1,7 @@
 /*
  * PDS common definitions
  *
- * Copyright (c) 2017-2018 Alexei A. Smekalkine <ikle@ikle.ru>
+ * Copyright (c) 2017-2019 Alexei A. Smekalkine <ikle@ikle.ru>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  */
@@ -60,7 +60,7 @@ struct sk_buff *pds_rx_prepare(struct sk_buff *skb);
 
 struct sk_buff *pds_alloc_skb(struct pds *pds, int type, unsigned len);
 
-int pds_hdlc_emit(struct dahdi_chan *o, const void *buf, size_t len);
+struct sk_buff *pds_hdlc_alloc_skb(struct dahdi_chan *o, unsigned len);
 int pds_hdlc_consume(struct dahdi_chan *o, const void *buf, size_t len);
 
 int pds_ctl_reset(struct pds_span *o);

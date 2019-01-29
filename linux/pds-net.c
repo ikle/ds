@@ -1,7 +1,7 @@
 /*
  * PDS network helpers
  *
- * Copyright (c) 2017-2018 Alexei A. Smekalkine <ikle@ikle.ru>
+ * Copyright (c) 2017-2019 Alexei A. Smekalkine <ikle@ikle.ru>
  *
  * SPDX-License-Identifier: BSD-2-Clause
  */
@@ -39,7 +39,6 @@ struct sk_buff *pds_alloc_skb(struct pds *pds, int type, unsigned len)
 	return skb;
 }
 
-static
 struct sk_buff *pds_hdlc_alloc_skb(struct dahdi_chan *o, unsigned len)
 {
 	struct pds_span *s = container_of(o->span, struct pds_span, span);
@@ -60,21 +59,6 @@ struct sk_buff *pds_hdlc_alloc_skb(struct dahdi_chan *o, unsigned len)
 
 	skb_set_transport_header(skb, 0);
 	return skb;
-}
-
-int pds_hdlc_emit(struct dahdi_chan *o, const void *buf, size_t len)
-{
-	struct sk_buff *skb;
-
-	skb = pds_hdlc_alloc_skb(o, len);
-	if (skb == NULL)
-		return -ENOMEM;
-
-	memcpy(skb_put(skb, len), buf, len);
-
-	pds_debug("%s: emit HDLC frame, %zu bytes\n", o->name, len);
-	dev_queue_xmit(skb);
-	return 0;
 }
 
 static
