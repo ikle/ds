@@ -138,7 +138,7 @@ static unsigned dahdi_chan_get_mtu(struct dahdi_chan *o)
 {
 	struct net_device *dev = dahdi_get_netdev(o);
 
-	return dev == NULL ? 2000 : dev->mtu;
+	return dev == NULL ? 16 : dev->mtu;
 }
 
 static void pds_chan_hdlc_hard_xmit(struct dahdi_chan *o)
