@@ -244,7 +244,7 @@ struct net_device *dahdi_get_netdev(struct dahdi_chan *c)
 	if (dahdi_have_netdev(c))
 		dev = c->hdlcnetdev->netdev;
 
-	if ((dev->flags & IFF_UP) == 0)
+	if (!netif_running(dev))
 		dev = NULL;
 
 	spin_unlock_irqrestore(&c->lock, flags);
