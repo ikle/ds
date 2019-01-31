@@ -121,7 +121,7 @@ static int cisco_eth_rx(struct sk_buff *skb)
 	struct cisco_hdlc *h = (void *) skb->data;
 
 	if (skb->len < sizeof (*h)) {
-		net_err_ratelimited("%s: HDLC packet too short %u\n",
+		net_err_ratelimited("%s: HDLC packet too short: %u bytes\n",
 				    skb->dev->name, skb->len);
 		goto error;
 	}
