@@ -145,7 +145,7 @@ static int dev_queue_xmit_copy(struct sk_buff *skb)
 
 static int pds_ctl_done(struct pds_span *o)
 {
-	int ret = fake ? 0 : -ETIMEDOUT, i;
+	int ret, i;
 	long timeout;
 
 	for (i = 3; i > 0; --i) {
@@ -160,6 +160,8 @@ static int pds_ctl_done(struct pds_span *o)
 				goto done;
 		}
 	}
+
+	ret = fake ? 0 : -ETIMEDOUT;
 done:
 	pds_req_end(&o->req);
 	mutex_unlock(&o->ctl_lock);
