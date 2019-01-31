@@ -139,7 +139,9 @@ static unsigned dahdi_chan_get_mtu(struct dahdi_chan *o)
 {
 	struct net_device *dev = dahdi_get_netdev(o);
 
-	return dev == NULL ? 16 : dev->mtu;
+	return dev == NULL ? 16 :
+		dev->hard_header_len + dev->needed_headroom + dev->mtu +
+		dev->needed_tailroom;
 }
 
 static void pds_chan_hdlc_hard_xmit(struct dahdi_chan *o)
