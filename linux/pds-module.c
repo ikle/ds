@@ -135,13 +135,19 @@ static int pds_chan_rbsbits(struct dahdi_chan *o, int bits)
 
 static struct net_device *dahdi_get_netdev(struct dahdi_chan *o);
 
-static unsigned dahdi_chan_get_mtu(struct dahdi_chan *o)
+static unsigned dahdi_hdlc_getlen(struct dahdi_chan *o)
 {
-	struct net_device *dev = dahdi_get_netdev(o);
+	unsigned long flags;
+	int len;
 
-	return dev == NULL ? 16 :
-		dev->hard_header_len + dev->needed_headroom + dev->mtu +
-		dev->needed_tailroom;
+	spin_lock_irqsave(&o->lock, flags);
+
+	len = o->writen[o->outwritebuf] - o->writeidx[o->outwritebuf];
+	len -= 2;  /* Strip off the empty HDLC CRC end */
+
+	spin_unlock_irqrestore(&o->lock, flags);
+
+	return len > 0 ? len : 0;
 }
 
 static void pds_chan_hdlc_hard_xmit(struct dahdi_chan *o)
@@ -152,7 +158,7 @@ static void pds_chan_hdlc_hard_xmit(struct dahdi_chan *o)
 	unsigned len;
 
 	do {
-		len = dahdi_chan_get_mtu(o);
+		len = dahdi_hdlc_getlen(o);
 		skb = pds_hdlc_alloc_skb(o, len);
 		if (skb == NULL)
 			break;
