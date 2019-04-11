@@ -440,6 +440,8 @@ static int pds_init(struct pds *o, int index, const char *master)
 
 	dev_add_pack(&o->hdlc);
 
+	memset(&o->ctl, 0, sizeof (o->ctl));
+
 	o->ctl.type	= cpu_to_be16(ETH_P_PDS_CTL);
 	o->ctl.dev	= o->master;
 	o->ctl.func	= pds_ctl_rx;
