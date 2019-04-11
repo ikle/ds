@@ -273,11 +273,13 @@ static
 int pds_hdlc_rx(struct sk_buff *skb, struct net_device *dev,
 		struct packet_type *p, struct net_device *orig_dev)
 {
-	struct pds_hdlc_header *h = (void *) skb->data;
+	struct pds_hdlc_header *h;
 	struct dahdi_chan *c;
 
 	if ((skb = pds_rx_prepare(skb)) == NULL)
 		return NET_RX_DROP;
+
+	h = (void *) skb->data;
 
 	if (skb_pull(skb, sizeof (*h)) == NULL)
 		goto broken;
