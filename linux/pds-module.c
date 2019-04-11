@@ -448,7 +448,7 @@ static int pds_init(struct pds *o, int index, const char *master)
 
 	pds_tdm_init(o);
 
-	pr_info("pds: device %s initialized\n", dev_name(&o->dev->dev));
+	pr_info("device %s initialized\n", dev_name(&o->dev->dev));
 	return 0;
 no_master:
 no_register:
@@ -460,7 +460,7 @@ static void pds_fini(struct pds *o)
 {
 	size_t i;
 
-	pr_info("pds: unregister %s device\n", dev_name(&o->dev->dev));
+	pr_info("unregister %s device\n", dev_name(&o->dev->dev));
 
 	pds_tdm_fini(o);
 
@@ -509,7 +509,7 @@ static int __init mod_init(void)
 
 	ret = pds_init(&pds0, 0, master);
 	if (ret != 0) {
-		pr_err("pds: cannot initialize device\n");
+		pr_err("cannot initialize device\n");
 		return ret;
 	}
 
