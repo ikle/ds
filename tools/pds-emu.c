@@ -81,6 +81,8 @@ static int send_counts (int s, int slips, struct sockaddr_ll *to)
 	p.header.flags	= 0;
 	p.header.seq	= htons (seq++);
 
+	p.align = 0;
+
 	memset (&p.counts, 0, sizeof (p.counts));
 
 	p.counts.timingslips = htonl (slips);
