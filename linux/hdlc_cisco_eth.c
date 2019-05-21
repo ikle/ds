@@ -20,6 +20,7 @@
 #include <linux/skbuff.h>
 #include <linux/string.h>
 #include <linux/uaccess.h>
+#include <linux/version.h>
 
 static bool debug = false;
 
@@ -78,12 +79,16 @@ static netdev_tx_t cisco_eth_tx(struct sk_buff *skb, struct net_device *dev)
 {
 	struct cisco_hdlc *h;
 
-	/* use skb_put_padto instead next two for linux >= 3.19 */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
 	if (skb_padto(skb, ETH_ZLEN) != 0)
 		goto drop;
 
 	if (skb->len < ETH_ZLEN)
 		skb->len = ETH_ZLEN;
+#else
+	if (skb_put_padto(skb, ETH_ZLEN) != 0)
+		goto drop;
+#endif
 
 	if (skb_cow_head(skb, sizeof (*h)) != 0)
 		goto drop;
