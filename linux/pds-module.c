@@ -301,6 +301,7 @@ int pds_hdlc_rx(struct sk_buff *skb, struct net_device *dev,
 		dev->stats.rx_packets++;
 		dev->stats.rx_bytes += skb->len;
 
+		skb->pkt_type = PACKET_HOST;
 		skb->protocol = hdlc_type_trans(skb, dev);
 		netif_rx(skb);
 	}
