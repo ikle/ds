@@ -141,7 +141,7 @@ static int cisco_eth_rx(struct sk_buff *skb)
 		net_warn_ratelimited("%s: unexpected HDLC control code %02x\n",
 				     skb->dev->name, h->control);
 
-	net_info_ratelimited("%s: HDLC unsupported protocol %04x ignored\n",
+	net_info_ratelimited("%s: unsupported HDLC protocol %04x ignored\n",
 			     skb->dev->name, be16_to_cpu(h->protocol));
 
 	skb_pull_inline(skb, sizeof (*h));
