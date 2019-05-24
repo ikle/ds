@@ -67,8 +67,10 @@ static __be16 cisco_eth_type_trans(struct sk_buff *skb, struct net_device *dev)
 
 	if (skb->len < sizeof (*h) ||
 	    (h->address != CISCO_UNICAST && h->address != CISCO_MULTICAST) ||
-	    h->protocol != cpu_to_be16(ETH_P_TEB))
+	    h->protocol != cpu_to_be16(ETH_P_TEB)) {
+		skb->pkt_type = PACKET_LOOPBACK;  /* hack: prevent bridging */
 		return cpu_to_be16(ETH_P_HDLC);
+	}
 
 	netdev_debug(dev, "cisco-eth: got %d bytes\n", skb->len);
 	skb_pull_inline(skb, sizeof (*h));
