@@ -23,17 +23,18 @@ static int pds_span_config(struct file *file, struct dahdi_span *o,
 			  struct dahdi_lineconfig *lc)
 {
 	struct pds_span *s = container_of(o, struct pds_span, span);
+	int conf = lc->lineconfig;
 	enum pds_line_code coding;
 	enum pds_framing   framing;
 	enum pds_signaling sig;
 	int ret;
 
-	coding	= lc->lineconfig & DAHDI_CONFIG_HDB3 ?	PDS_LINE_CODE_HDB3 :
-							PDS_LINE_CODE_AMI;
-	framing	= lc->lineconfig & DAHDI_CONFIG_CRC4 ?	PDS_FRAMING_G704 :
-							PDS_FRAMING_G704_NO_CRC;
-	sig	= lc->lineconfig & DAHDI_CONFIG_CCS  ?	PDS_SIGNALING_CCS :
-							PDS_SIGNALING_CAS;
+	coding	= conf & DAHDI_CONFIG_HDB3 ?	PDS_LINE_CODE_HDB3 :
+						PDS_LINE_CODE_AMI;
+	framing	= conf & DAHDI_CONFIG_CRC4 ?	PDS_FRAMING_G704 :
+						PDS_FRAMING_G704_NO_CRC;
+	sig	= conf & DAHDI_CONFIG_CCS  ?	PDS_SIGNALING_CCS :
+						PDS_SIGNALING_CAS;
 
 	ret = pds_ctl_setup(s, lc->sync, coding, framing, sig);
 	if (ret == 0) {
