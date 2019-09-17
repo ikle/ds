@@ -31,7 +31,8 @@ static int pds_span_config(struct file *file, struct dahdi_span *o,
 
 	coding	= conf & DAHDI_CONFIG_HDB3 ?	PDS_LINE_CODE_HDB3 :
 						PDS_LINE_CODE_AMI;
-	framing	= conf & DAHDI_CONFIG_CRC4 ?	PDS_FRAMING_G704 :
+	framing	= conf & DAHDI_CONFIG_UNFRAMED ? PDS_FRAMING_UNFRAMED :
+		  conf & DAHDI_CONFIG_CRC4 ?	PDS_FRAMING_G704 :
 						PDS_FRAMING_G704_NO_CRC;
 	sig	= conf & DAHDI_CONFIG_CCS  ?	PDS_SIGNALING_CCS :
 						PDS_SIGNALING_CAS;
@@ -67,7 +68,7 @@ static int pds_span_shutdown(struct dahdi_span *o)
 static int pds_chan_config(struct file *file, struct dahdi_chan *o,
 			   int sigtype)
 {
-	int ret;
+	int ret = 0;
 
 	if (o == o->master)
 		pds_debug("%s: master channel\n", o->name);
@@ -76,7 +77,8 @@ static int pds_chan_config(struct file *file, struct dahdi_chan *o,
 
 	pds_debug("%s: sigtype = %x\n", o->name, sigtype);
 
-	ret = pds_ctl_enslave(o);
+	if ((o->span->lineconfig & DAHDI_CONFIG_UNFRAMED) == 0)
+		ret = pds_ctl_enslave(o);
 
 	if (ret == 0 && o == o->master && sigtype == DAHDI_SIG_HDLCNET) {
 		/* force hard HDLC mode */
@@ -218,7 +220,8 @@ static void pds_span_init(struct pds_span *o, struct pds *pds, int index)
 	s->deflaw	= DAHDI_LAW_ALAW;
 	s->lineconfig	= DAHDI_CONFIG_HDB3 | DAHDI_CONFIG_CCS;
 	s->linecompat	= DAHDI_CONFIG_AMI | DAHDI_CONFIG_HDB3 |
-			  DAHDI_CONFIG_CCS | DAHDI_CONFIG_CRC4;
+			  DAHDI_CONFIG_CCS | DAHDI_CONFIG_CRC4 |
+			  DAHDI_CONFIG_UNFRAMED;
 
 	s->channels	= ARRAY_SIZE(o->chan);
 	s->chans	= o->chan_list;

@@ -17,6 +17,10 @@
 
 #include <dahdi/kernel.h>
 
+#ifndef DAHDI_CONFIG_UNFRAMED
+#define DAHDI_CONFIG_UNFRAMED  0
+#endif
+
 #include "pds-conf.h"
 #include "pds-proto.h"
 #include "pds-req.h"
