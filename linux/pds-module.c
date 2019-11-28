@@ -80,8 +80,9 @@ static int pds_chan_config(struct file *file, struct dahdi_chan *o,
 	if ((o->span->lineconfig & DAHDI_CONFIG_UNFRAMED) == 0)
 		ret = pds_ctl_enslave(o);
 
-	if (ret == 0 && o == o->master && sigtype == DAHDI_SIG_HDLCNET) {
-		/* force hard HDLC mode */
+	if (ret == 0 && o == o->master &&
+	    (sigtype & DAHDI_SIG_HDLCRAW) == DAHDI_SIG_HDLCRAW) {
+		/* force hard HDLC mode for all HDLC modes */
 		o->flags &= ~(DAHDI_FLAG_FCS | DAHDI_FLAG_HDLC);
 		o->flags |= DAHDI_FLAG_NOSTDTXRX;
 	}
