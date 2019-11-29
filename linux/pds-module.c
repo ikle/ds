@@ -11,6 +11,7 @@
 #include <linux/hrtimer.h>
 #include <linux/module.h>
 #include <linux/netdevice.h>
+#include <linux/ppp_defs.h>
 #include <linux/ratelimit.h>
 
 #include "pds.h"
@@ -18,6 +19,25 @@
 bool debug = false;
 bool fake  = false;
 static char *master = NULL;
+
+static u16 calc_fcs (const void *data, size_t len)
+{
+	u16 fcs = PPP_INITFCS;
+	const u8 *p;
+
+	for (p = data; len > 0; ++p, --len)
+		fcs = PPP_FCS (fcs, *p);
+
+	return ~fcs;
+}
+
+static void write_le16 (u16 x, void *to)
+{
+	char *p = to;
+
+	p[0] = (x >> 0) & 0xff;
+	p[1] = (x >> 8) & 0xff;
+}
 
 static int pds_span_config(struct file *file, struct dahdi_span *o,
 			  struct dahdi_lineconfig *lc)
@@ -280,6 +300,7 @@ int pds_hdlc_rx(struct sk_buff *skb, struct net_device *dev,
 {
 	struct pds_hdlc_header *h;
 	struct dahdi_chan *c;
+	u8 fcs[2];
 
 	if ((skb = pds_rx_prepare(skb)) == NULL)
 		return NET_RX_DROP;
@@ -312,6 +333,8 @@ int pds_hdlc_rx(struct sk_buff *skb, struct net_device *dev,
 	}
 	else {
 		dahdi_hdlc_putbuf(c, skb->data, skb->len);
+		write_le16 (calc_fcs (skb->data, skb->len), fcs);
+		dahdi_hdlc_putbuf(c, fcs, sizeof (fcs));
 		dahdi_hdlc_finish(c);
 		kfree_skb(skb);
 	}
