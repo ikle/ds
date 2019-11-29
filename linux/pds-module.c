@@ -331,6 +331,16 @@ int pds_hdlc_rx(struct sk_buff *skb, struct net_device *dev,
 		skb->protocol = hdlc_type_trans(skb, dev);
 		netif_rx(skb);
 	}
+	else if ((c->flags & DAHDI_FLAG_PPP) != 0) {
+		if (skb->len < 2 ||
+		    skb->data[0] != 0xff ||	/* all stations    */
+		    skb->data[1] != 0x03)	/* unnumbered info */
+			goto broken;
+
+		skb_pull (skb, 2);
+		skb_queue_tail (&c->ppp_rq, skb);
+		tasklet_schedule (&c->ppp_calls);
+	}
 	else {
 		dahdi_hdlc_putbuf(c, skb->data, skb->len);
 		write_le16 (calc_fcs (skb->data, skb->len), fcs);
