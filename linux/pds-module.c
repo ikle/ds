@@ -20,6 +20,8 @@ bool debug = false;
 bool fake  = false;
 static char *master = NULL;
 
+/* generic helper functions */
+
 static u16 calc_fcs (const void *data, size_t len)
 {
 	u16 fcs = PPP_INITFCS;
@@ -38,6 +40,70 @@ static void write_le16 (u16 x, void *to)
 	p[0] = (x >> 0) & 0xff;
 	p[1] = (x >> 8) & 0xff;
 }
+
+static struct net_device *dahdi_get_netdev(struct dahdi_chan *c)
+{
+	unsigned long flags;
+	struct net_device *dev;
+
+	spin_lock_irqsave(&c->lock, flags);
+
+	if (dahdi_have_netdev(c))
+		dev = c->hdlcnetdev->netdev;
+
+	if (!netif_running(dev))
+		dev = NULL;
+
+	spin_unlock_irqrestore(&c->lock, flags);
+	return dev;
+}
+
+static void dahdi_net_rx(struct dahdi_chan *c, struct sk_buff *skb,
+			 struct net_device *dev)
+{
+	dev->stats.rx_packets++;
+	dev->stats.rx_bytes += skb->len;
+
+	skb->pkt_type = PACKET_HOST;
+	skb->protocol = hdlc_type_trans(skb, dev);
+	netif_rx(skb);
+}
+
+static void dahdi_ppp_rx(struct dahdi_chan *c, struct sk_buff *skb)
+{
+	/* check PPP header: address = all stations, control = unnumbered */
+	if (skb->len < 2 || skb->data[0] != 0xff || skb->data[1] != 0x03) {
+		dev_kfree_skb(skb);
+		return;
+	}
+
+	skb_pull(skb, 2);
+	skb_queue_tail(&c->ppp_rq, skb);
+	tasklet_schedule(&c->ppp_calls);
+}
+
+static void dahdi_dev_rx(struct dahdi_chan *c, struct sk_buff *skb)
+{
+	dahdi_hdlc_putbuf(c, skb->data, skb->len);
+	write_le16 (calc_fcs (skb->data, skb->len), fcs);
+	dahdi_hdlc_putbuf(c, fcs, sizeof (fcs));
+	dahdi_hdlc_finish(c);
+	kfree_skb(skb);
+}
+
+static void dahdi_rx(struct dahdi_chan *c, struct sk_buff *skb)
+{
+	struct net_device *dev = dahdi_get_netdev(c);
+
+	if (dev != NULL)
+		dahdi_net_rx (c, skb, dev);
+	else if ((c->flags & DAHDI_FLAG_PPP) != 0)
+		dahdi_ppp_rx (c, skb);
+	else
+		dahdi_dev_rx (c, skb);
+}
+
+/* span operations */
 
 static int pds_span_config(struct file *file, struct dahdi_span *o,
 			  struct dahdi_lineconfig *lc)
@@ -157,8 +223,6 @@ static int pds_chan_rbsbits(struct dahdi_chan *o, int bits)
 	return 0;
 }
 
-static struct net_device *dahdi_get_netdev(struct dahdi_chan *o);
-
 static unsigned dahdi_hdlc_getlen(struct dahdi_chan *o)
 {
 	unsigned long flags;
@@ -274,69 +338,6 @@ static void pds_span_init(struct pds_span *o, struct pds *pds, int index)
 static void pds_span_fini(struct pds_span *o)
 {
 	pds_req_fini(&o->req);
-}
-
-static
-struct net_device *dahdi_get_netdev(struct dahdi_chan *c)
-{
-	unsigned long flags;
-	struct net_device *dev;
-
-	spin_lock_irqsave(&c->lock, flags);
-
-	if (dahdi_have_netdev(c))
-		dev = c->hdlcnetdev->netdev;
-
-	if (!netif_running(dev))
-		dev = NULL;
-
-	spin_unlock_irqrestore(&c->lock, flags);
-	return dev;
-}
-
-static void dahdi_net_rx(struct dahdi_chan *c, struct sk_buff *skb,
-			 struct net_device *dev)
-{
-	dev->stats.rx_packets++;
-	dev->stats.rx_bytes += skb->len;
-
-	skb->pkt_type = PACKET_HOST;
-	skb->protocol = hdlc_type_trans(skb, dev);
-	netif_rx(skb);
-}
-
-static void dahdi_ppp_rx(struct dahdi_chan *c, struct sk_buff *skb)
-{
-	/* check PPP header: address = all stations, control = unnumbered */
-	if (skb->len < 2 || skb->data[0] != 0xff || skb->data[1] != 0x03) {
-		dev_kfree_skb(skb);
-		return;
-	}
-
-	skb_pull(skb, 2);
-	skb_queue_tail(&c->ppp_rq, skb);
-	tasklet_schedule(&c->ppp_calls);
-}
-
-static void dahdi_dev_rx(struct dahdi_chan *c, struct sk_buff *skb)
-{
-	dahdi_hdlc_putbuf(c, skb->data, skb->len);
-	write_le16 (calc_fcs (skb->data, skb->len), fcs);
-	dahdi_hdlc_putbuf(c, fcs, sizeof (fcs));
-	dahdi_hdlc_finish(c);
-	kfree_skb(skb);
-}
-
-static void dahdi_rx(struct dahdi_chan *c, struct sk_buff *skb)
-{
-	struct net_device *dev = dahdi_get_netdev(c);
-
-	if (dev != NULL)
-		dahdi_net_rx (c, skb, dev);
-	else if ((c->flags & DAHDI_FLAG_PPP) != 0)
-		dahdi_ppp_rx (c, skb);
-	else
-		dahdi_dev_rx (c, skb);
 }
 
 static
