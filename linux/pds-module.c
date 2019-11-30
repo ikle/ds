@@ -294,6 +294,51 @@ struct net_device *dahdi_get_netdev(struct dahdi_chan *c)
 	return dev;
 }
 
+static void dahdi_net_rx(struct dahdi_chan *c, struct sk_buff *skb,
+			 struct net_device *dev)
+{
+	dev->stats.rx_packets++;
+	dev->stats.rx_bytes += skb->len;
+
+	skb->pkt_type = PACKET_HOST;
+	skb->protocol = hdlc_type_trans(skb, dev);
+	netif_rx(skb);
+}
+
+static void dahdi_ppp_rx(struct dahdi_chan *c, struct sk_buff *skb)
+{
+	/* check PPP header: address = all stations, control = unnumbered */
+	if (skb->len < 2 || skb->data[0] != 0xff || skb->data[1] != 0x03) {
+		dev_kfree_skb(skb);
+		return;
+	}
+
+	skb_pull(skb, 2);
+	skb_queue_tail(&c->ppp_rq, skb);
+	tasklet_schedule(&c->ppp_calls);
+}
+
+static void dahdi_dev_rx(struct dahdi_chan *c, struct sk_buff *skb)
+{
+	dahdi_hdlc_putbuf(c, skb->data, skb->len);
+	write_le16 (calc_fcs (skb->data, skb->len), fcs);
+	dahdi_hdlc_putbuf(c, fcs, sizeof (fcs));
+	dahdi_hdlc_finish(c);
+	kfree_skb(skb);
+}
+
+static void dahdi_rx(struct dahdi_chan *c, struct sk_buff *skb)
+{
+	struct net_device *dev = dahdi_get_netdev(c);
+
+	if (dev != NULL)
+		dahdi_net_rx (c, skb, dev);
+	else if ((c->flags & DAHDI_FLAG_PPP) != 0)
+		dahdi_ppp_rx (c, skb);
+	else
+		dahdi_dev_rx (c, skb);
+}
+
 static
 int pds_hdlc_rx(struct sk_buff *skb, struct net_device *dev,
 		struct packet_type *p, struct net_device *orig_dev)
@@ -321,34 +366,7 @@ int pds_hdlc_rx(struct sk_buff *skb, struct net_device *dev,
 		skb_trim(skb, h->cutoff);
 
 	pds_debug("%s: got %u bytes\n", c->name, skb->len);
-
-	dev = dahdi_get_netdev(c);
-	if (dev != NULL) {
-		dev->stats.rx_packets++;
-		dev->stats.rx_bytes += skb->len;
-
-		skb->pkt_type = PACKET_HOST;
-		skb->protocol = hdlc_type_trans(skb, dev);
-		netif_rx(skb);
-	}
-	else if ((c->flags & DAHDI_FLAG_PPP) != 0) {
-		if (skb->len < 2 ||
-		    skb->data[0] != 0xff ||	/* all stations    */
-		    skb->data[1] != 0x03)	/* unnumbered info */
-			goto broken;
-
-		skb_pull (skb, 2);
-		skb_queue_tail (&c->ppp_rq, skb);
-		tasklet_schedule (&c->ppp_calls);
-	}
-	else {
-		dahdi_hdlc_putbuf(c, skb->data, skb->len);
-		write_le16 (calc_fcs (skb->data, skb->len), fcs);
-		dahdi_hdlc_putbuf(c, fcs, sizeof (fcs));
-		dahdi_hdlc_finish(c);
-		kfree_skb(skb);
-	}
-
+	dahdi_rx (c, skb);
 	return NET_RX_SUCCESS;
 broken:
 	skb->dev->stats.rx_errors++;
