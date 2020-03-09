@@ -137,7 +137,7 @@ enum pds_error {
 
 struct pds_ctl_status {
 	struct pds_ctl_header header;
-	__u16 status;  /* one from pds_error */
+	__be16 status;  /* one from pds_error */
 };
 
 /*
@@ -222,7 +222,7 @@ enum pds_alarm {
 
 struct pds_ctl_alarms {
 	struct pds_ctl_header header;
-	__u16 alarms;  /* bitwise ored pds_alarm */
+	__be16 alarms;  /* bitwise ored pds_alarm */
 };
 
 /*
