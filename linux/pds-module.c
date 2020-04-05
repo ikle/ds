@@ -44,7 +44,7 @@ static void write_le16 (u16 x, void *to)
 static struct net_device *dahdi_get_netdev(struct dahdi_chan *c)
 {
 	unsigned long flags;
-	struct net_device *dev;
+	struct net_device *dev = NULL;
 
 	spin_lock_irqsave(&c->lock, flags);
 
