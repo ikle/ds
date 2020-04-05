@@ -84,6 +84,8 @@ static void dahdi_ppp_rx(struct dahdi_chan *c, struct sk_buff *skb)
 
 static void dahdi_dev_rx(struct dahdi_chan *c, struct sk_buff *skb)
 {
+	u8 fcs[2];
+
 	dahdi_hdlc_putbuf(c, skb->data, skb->len);
 	write_le16 (calc_fcs (skb->data, skb->len), fcs);
 	dahdi_hdlc_putbuf(c, fcs, sizeof (fcs));
@@ -346,7 +348,6 @@ int pds_hdlc_rx(struct sk_buff *skb, struct net_device *dev,
 {
 	struct pds_hdlc_header *h;
 	struct dahdi_chan *c;
-	u8 fcs[2];
 
 	if ((skb = pds_rx_prepare(skb)) == NULL)
 		return NET_RX_DROP;
