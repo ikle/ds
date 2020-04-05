@@ -48,11 +48,12 @@ static struct net_device *dahdi_get_netdev(struct dahdi_chan *c)
 
 	spin_lock_irqsave(&c->lock, flags);
 
-	if (dahdi_have_netdev(c))
+	if (dahdi_have_netdev(c)) {
 		dev = c->hdlcnetdev->netdev;
 
-	if (!netif_running(dev))
-		dev = NULL;
+		if (!netif_running(dev))
+			dev = NULL;
+	}
 
 	spin_unlock_irqrestore(&c->lock, flags);
 	return dev;
