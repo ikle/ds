@@ -4,7 +4,7 @@ PDS Linux Kernel Device Driver is a driver for E1 devices connected via
 Ethernet. Currently, it is assumed that only one E1 device is connected
 to one Ethernet port: the driver sends messages via broadcast. (Adding
 the ability to work via unicast is not difficult, just no one needs it
-at the moment.) 
+at the moment.)
 
 The driver allows you to work in the so-called fake mode, in which it
 still returns a positive status without receiving a response from the
